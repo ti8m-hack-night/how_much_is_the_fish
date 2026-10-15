@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>How Much Is The Fish</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;700&display=swap">
+<style>
+/* Layout: federal-style app shell. 5px red top line, controls row, wide chart card, then stats + window calculator side by side.
+   Palette: Oblique palette (oblique-bit/oblique, _palette.scss): slate secondary, red accent, green success, blue info, orange warning. */
+:root{
+  --font:"Noto Sans",Arial,system-ui,-apple-system,sans-serif;
+  --bg:#f0f4f7; --surface:#ffffff; --fg:#1c2834; --muted:#46596b; --line:#dfe4e9; --line-strong:#acb4bd;
+  --primary:#46596b; --primary-ink:#ffffff; --accent:#d8232a;
+  --cheap:#047857; --peak:#bf1f25; --peak-soft:#fae1e2;
+  --window:#1e40af; --res-bg:#dbeafe; --res-fg:#1c2834; --warn:#c2410c; --warn-soft:#ffedd5;
+  --bar:#acb4bd; --weather:#8655f6;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#131b22; --surface:#1c2834; --fg:#f0f4f7; --muted:#acb4bd; --line:#2f4356; --line-strong:#46596b;
+  --primary:#dfe4e9; --primary-ink:#131b22; --accent:#fc656b;
+  --cheap:#34d399; --peak:#fc656b; --peak-soft:#801519;
+  --window:#dbeafe; --res-bg:#1e3a8a; --res-fg:#f0f4f7; --warn:#fb923c; --warn-soft:#7c2d12; --bar:#596978; --weather:#c4a8ff; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#131b22; --surface:#1c2834; --fg:#f0f4f7; --muted:#acb4bd; --line:#2f4356; --line-strong:#46596b;
+  --primary:#dfe4e9; --primary-ink:#131b22; --accent:#fc656b;
+  --cheap:#34d399; --peak:#fc656b; --peak-soft:#801519;
+  --window:#dbeafe; --res-bg:#1e3a8a; --res-fg:#f0f4f7; --warn:#fb923c; --warn-soft:#7c2d12; --bar:#596978; --weather:#c4a8ff; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:400 1rem/1.5 var(--font);margin:0;border-top:5px solid var(--accent)}
+.wrap{max-width:1240px;margin-inline:auto;padding-inline:16px;padding-block:24px 48px;display:grid;gap:16px}
+header{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:flex-end;justify-content:space-between}
+h1{font-size:1.65rem;line-height:1.2;margin:0;font-weight:700;letter-spacing:-.01em}
+h1 small{display:block;font-size:.875rem;font-weight:400;color:var(--muted);letter-spacing:0;margin-top:4px}
+.proto{display:inline-block;vertical-align:middle;font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;padding:2px 8px;border:1px solid var(--accent);color:var(--accent);border-radius:2px;margin-left:8px}
+.banner{background:var(--warn-soft);border:1px solid var(--warn);border-radius:4px;padding:10px 16px;font-size:.875rem}
+h2{font-size:1.1rem;margin:0 0 12px;font-weight:700}
+.label{font-size:.75rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:500}
+.status{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:4px;font-size:.875rem;border:1px solid var(--line-strong);background:var(--surface)}
+.status i{width:8px;height:8px;border-radius:50%;background:var(--cheap);display:inline-block;flex:none}
+.status.off{background:var(--warn-soft);border-color:var(--warn)}
+.status.off i{background:var(--warn)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:20px;min-width:0}
+.controls{display:flex;flex-wrap:wrap;gap:16px 32px;align-items:flex-end}
+.field{display:grid;gap:4px;min-width:0}
+.seg{display:inline-flex;border:1px solid var(--line-strong);border-radius:2px;overflow:hidden}
+.seg button{font:500 .9375rem var(--font);padding:8px 16px;min-height:36px;background:var(--surface);color:var(--fg);border:0;border-right:1px solid var(--line-strong);cursor:pointer}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--primary);color:var(--primary-ink)}
+input,select{font:400 .9375rem var(--font);min-height:36px;padding:6px 10px;border:1px solid var(--line-strong);border-radius:2px;background:var(--surface);color:var(--fg);max-width:100%}
+input[type=range]{padding:0;accent-color:var(--cheap);width:200px}
+:focus-visible{outline:3px solid var(--window);outline-offset:2px}
+.btn{font:500 .9375rem var(--font);min-height:36px;padding:8px 20px;border:0;border-radius:2px;background:var(--primary);color:var(--primary-ink);cursor:pointer}
+.thr{display:flex;align-items:center;gap:12px}
+.thr output{font-weight:700;min-width:7ch;font-variant-numeric:tabular-nums}
+.chart-head{display:flex;flex-wrap:wrap;gap:8px 24px;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+.chart-head h2{margin:0}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:.8125rem;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend b{width:12px;height:12px;border-radius:2px;display:inline-block}
+svg{display:block;width:100%;height:auto;font-family:var(--font)}
+.svgwrap{overflow-x:auto}
+.svgwrap svg{min-width:640px}
+.cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}
+@media(max-width:860px){.cols{grid-template-columns:minmax(0,1fr)}}
+dl.stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 16px;margin:0}
+.stats>div{padding:10px 0;border-top:1px solid var(--line)}
+.stats dt{font-size:.8125rem;color:var(--muted)}
+.stats dd{margin:0;font-size:1.35rem;font-weight:700;font-variant-numeric:tabular-nums}
+.stats dd small{font-size:.8125rem;font-weight:400;color:var(--muted)}
+.up{color:var(--peak)} .down{color:var(--cheap)}
+form.calc{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 16px;align-items:end}
+form.calc .wide{grid-column:1/-1}
+@media(max-width:480px){form.calc,dl.stats{grid-template-columns:minmax(0,1fr)}}
+.result{margin-top:16px;border:1px solid var(--window);background:var(--res-bg);color:var(--res-fg);border-radius:4px;padding:16px}
+.result .big{font-size:1.5rem;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.25}
+.result .grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:12px}
+@media(max-width:480px){.result .grid{grid-template-columns:minmax(0,1fr)}}
+.result .grid div{font-size:.8125rem}
+.result .grid b{display:block;font-size:1.1rem;font-variant-numeric:tabular-nums}
+.result p{margin:12px 0 0;font-size:.875rem}
+.err{margin-top:16px;border:1px solid var(--peak);background:var(--peak-soft);color:var(--fg);border-radius:4px;padding:12px 16px}
+footer{font-size:.8125rem;color:var(--muted);display:flex;flex-wrap:wrap;gap:8px 24px;justify-content:space-between;align-items:center}
+footer label{display:inline-flex;gap:8px;align-items:center;cursor:pointer}
+footer a{color:inherit}
+.note{font-size:.8125rem;color:var(--muted);margin:8px 0 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>how_much_is_the_fish <span class="proto">Prototyp</span><small>Strompreis Schweiz (CH), Stundenwerte in ct/kWh, Zeiten in Europe/Zurich</small></h1>
+    <div class="status" id="status" role="status"><i></i><span id="statusText"></span></div>
+  </header>
+
+  <div class="banner" role="note"><b>UX-Prototyp.</b> Alle Preise und Wetterwerte sind Beispieldaten, es findet kein API-Abruf statt. Bedienung und Berechnung funktionieren.</div>
+
+  <section class="card controls" aria-label="Auswahl">
+    <div class="field"><span class="label">Tag</span>
+      <div class="seg" id="dayseg">
+        <button type="button" data-d="today" aria-pressed="true">Heute</button>
+        <button type="button" data-d="tomorrow" aria-pressed="false">Morgen</button>
+      </div></div>
+    <div class="field"><label class="label" for="date">Anderer Tag</label><input type="date" id="date"></div>
+    <div class="field"><label class="label" for="thr">Schwellwert</label>
+      <div class="thr"><input type="range" id="thr" min="0" max="30" step="0.1" value="10"><output id="thrOut" for="thr"></output></div></div>
+    <div class="field"><label class="label" for="wx">Wetter</label>
+      <select id="wx"><option value="temp">Temperatur (°C)</option><option value="sun">Sonnenschein (min/h)</option><option value="off">Aus</option></select></div>
+  </section>
+
+  <section class="card" aria-labelledby="ch">
+    <div class="chart-head"><h2 id="ch"></h2><div class="legend" id="legend"></div></div>
+    <div class="svgwrap"><svg id="chart" viewBox="0 0 960 380" role="img" aria-label="Stundenpreise als Säulendiagramm"></svg></div>
+    <p class="note" id="chartNote"></p>
+  </section>
+
+  <div class="cols">
+    <section class="card" aria-labelledby="st"><h2 id="st">Statistik</h2><dl class="stats" id="stats"></dl></section>
+    <section class="card" aria-labelledby="cw"><h2 id="cw">Günstigstes Zeitfenster</h2>
+      <form class="calc" id="calc" novalidate>
+        <div class="field"><label class="label" for="P">Leistung P (kW)</label><input id="P" type="number" min="0.1" step="0.1" value="11" inputmode="decimal"></div>
+        <div class="field"><label class="label" for="T">Dauer T (ganze Stunden)</label><input id="T" type="number" min="1" step="1" value="3" inputmode="numeric"></div>
+        <div class="field"><label class="label" for="from">Von</label><input id="from" type="datetime-local" step="3600"></div>
+        <div class="field"><label class="label" for="to">Bis</label><input id="to" type="datetime-local" step="3600"></div>
+        <div class="wide"><button class="btn" type="submit">Berechnen</button></div>
+      </form>
+      <div id="out" aria-live="polite"></div>
+    </section>
+  </div>
+
+  <footer>
+    <span>Preise: <a href="https://www.energy-charts.info" target="_blank" rel="noopener">Energy-Charts / Fraunhofer ISE</a> · Wetter: <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a></span>
+    <label><input type="checkbox" id="sim"> Prototyp: API-Ausfall (503) simulieren</label>
+  </footer>
+  <p class="note">UX-Prototyp mit Beispieldaten im Format der Energy-Charts-API (15-Minuten-Werte, EUR/MWh). In der lokalen App ersetzt der Live-Abruf mit Cache diese Daten.</p>
+</div>
+
+<script>
+const TZ='Europe/Zurich';
+const f2=new Intl.DateTimeFormat('en-CA',{timeZone:TZ,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',hourCycle:'h23',minute:'2-digit'});
+function zparts(t){const o={};for(const p of f2.formatToParts(new Date(t*1000)))o[p.type]=p.value;return o}
+const dayKey=t=>{const o=zparts(t);return `${o.year}-${o.month}-${o.day}`};
+const hhmm=t=>{const o=zparts(t);return `${o.hour}:${o.minute}`};
+const hourKey=t=>{const o=zparts(t);return `${o.year}-${o.month}-${o.day}T${o.hour}`};
+const fmt=(n,d=2)=>n.toFixed(d);
+const addDays=(k,n)=>{const d=new Date(k+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10)};
+const dayLabel=k=>new Date(k+'T12:00:00Z').toLocaleDateString('de-CH',{weekday:'long',day:'numeric',month:'long',timeZone:'UTC'});
+
+/* ---------- Pure calculation (no API access) ---------- */
+// rows: [{t:unix_seconds, p:EUR/MWh}] at 15-min or 1-h resolution -> hourly means
+function aggregateHourly(rows){
+  const m=new Map();
+  for(const r of rows){const h=Math.floor(r.t/3600)*3600;const e=m.get(h)||{s:0,n:0};e.s+=r.p;e.n++;m.set(h,e)}
+  return [...m.entries()].sort((a,b)=>a[0]-b[0]).map(([t,e])=>({t,p:e.s/e.n}));
+}
+const ct=p=>p/10; // EUR/MWh -> ct/kWh
+function stats(h){
+  const n=h.length,avg=h.reduce((s,x)=>s+x.p,0)/n;
+  const min=h.reduce((a,b)=>b.p<a.p?b:a),max=h.reduce((a,b)=>b.p>a.p?b:a);
+  const sd=Math.sqrt(h.reduce((s,x)=>s+(x.p-avg)**2,0)/n);
+  return {n,avg,min,max,sd};
+}
+function bestWindow(h,P,T){
+  if(!Number.isInteger(T)||T<1)return {error:'Die Dauer muss eine ganze Zahl ab 1 Stunde sein.'};
+  if(!(P>0))return {error:'Die Leistung muss grösser als 0 kW sein.'};
+  if(T>h.length)return {error:`Im gewählten Zeitraum sind nur ${h.length} Stunden verfügbar, gewünscht sind ${T}. Verkürze die Dauer oder erweitere den Zeitraum.`};
+  let best=0,bs=Infinity,sum=0;
+  for(let i=0;i<h.length;i++){sum+=h[i].p;if(i>=T)sum-=h[i-T].p;if(i>=T-1&&sum<bs){bs=sum;best=i-T+1}}
+  const avg=h.reduce((s,x)=>s+x.p,0)/h.length;
+  const cost=bs/1000*P,costAvg=avg/1000*T*P;
+  const costSingles=[...h].sort((a,b)=>a.p-b.p).slice(0,T).reduce((s,x)=>s+x.p,0)/1000*P;
+  return {start:h[best].t,end:h[best+T-1].t+3600,T,cost,costAvg,saving:costAvg-cost,costSingles};
+}
+
+/* ---------- Example data (Energy-Charts shape: 15-min, EUR/MWh) ---------- */
+const nowS=Math.floor(Date.now()/1000);
+const TODAY=dayKey(nowS),TOMORROW=addDays(TODAY,1);
+const dnum=t=>{const o=zparts(t);return Math.floor(new Date(`${o.year}-${o.month}-${o.day}T12:00:00Z`)/86400000)};
+function samplePrice(t){
+  const o=zparts(t),h=+o.hour+ +o.minute/60,d=dnum(t);
+  const base=88+((d*37)%23)-11;
+  const v=base+34*Math.exp(-((h-8)**2)/3.2)+48*Math.exp(-((h-19.2)**2)/3.6)-52*Math.exp(-((h-13.2)**2)/9)-22*Math.exp(-((h-3)**2)/7)+Math.sin(t/900*1.7+d)*3.5;
+  return Math.round(v*100)/100;
+}
+function sampleWx(t){const h=+zparts(t).hour,d=dnum(t),cl=(Math.sin(d*1.3)+1)/2;
+  return {temp:Math.round((9+5*Math.sin((h-9)/24*2*Math.PI)+((d*7)%5)-2)*10)/10,sun:Math.round(Math.max(0,Math.sin((h-6.5)/12*Math.PI))*(60-cl*38))}}
+const base0=Math.floor((nowS-3*86400)/3600)*3600,end0=nowS+3*86400;
+const raw=[],WX=new Map();
+for(let t=base0;t<end0;t+=900)raw.push({t,p:samplePrice(t)});
+for(let t=base0;t<end0;t+=3600)WX.set(hourKey(t),sampleWx(t));
+const hours=aggregateHourly(raw).map(x=>({...x,key:hourKey(x.t),day:dayKey(x.t),hm:hhmm(x.t)})).filter(x=>x.day<=TOMORROW);
+const byDay=k=>hours.filter(x=>x.day===k);
+const days=[...new Set(hours.map(x=>x.day))];
+
+/* ---------- State ---------- */
+const S={day:TODAY,thr:10,wx:'temp',win:null,sim:false};
+const $=id=>document.getElementById(id);
+const fetchedAt=nowS-120;
+
+function renderStatus(){
+  const el=$('status');
+  if(S.sim){el.className='status off';$('statusText').textContent='Energy-Charts nicht erreichbar (503). Gespeicherter Stand von vor 3 h 12 min.'}
+  else{el.className='status';$('statusText').textContent=`Live · aktualisiert ${hhmm(fetchedAt)} Uhr`}
+}
+
+/* ---------- Chart ---------- */
+function renderChart(){
+  const d=byDay(S.day),svg=$('chart');
+  $('ch').textContent=`Strompreis, ${dayLabel(S.day)}`;
+  if(!d.length){svg.innerHTML=`<text x="480" y="190" text-anchor="middle" fill="var(--muted)" font-size="16">Für diesen Tag liegen keine Preise vor.</text>`;$('legend').innerHTML='';$('chartNote').textContent='';return}
+  const W=960,H=380,L=52,R=S.wx==='off'?16:52,T=34,B=34,iw=W-L-R,ih=H-T-B;
+  const vals=d.map(x=>ct(x.p)),thr=S.thr;
+  const lo=Math.min(0,Math.floor(Math.min(...vals))),hi=Math.ceil(Math.max(...vals,thr)/2)*2+2;
+  const y=v=>T+ih-(v-lo)/(hi-lo)*ih,bw=iw/d.length,x=i=>L+i*bw;
+  const st=stats(d),mi=d.indexOf(st.min),ma=d.indexOf(st.max);
+  let s='';
+  const step=hi-lo>16?4:2;
+  for(let v=Math.ceil(lo/step)*step;v<=hi;v+=step)s+=`<line x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)"/><text x="${L-8}" y="${y(v)+4}" text-anchor="end" font-size="12" fill="var(--muted)">${v}</text>`;
+  s+=`<text x="${L-8}" y="16" text-anchor="end" font-size="11" fill="var(--muted)">ct/kWh</text>`;
+  if(S.win&&!S.win.error){
+    const s0=d.findIndex(h=>h.t+3600>S.win.start);let i1=d.findIndex(h=>h.t>=S.win.end);if(i1<0)i1=d.length;
+    if(s0>=0&&s0<i1&&d[s0].t<S.win.end)s+=`<rect x="${x(s0)}" y="${T}" width="${(i1-s0)*bw}" height="${ih}" fill="var(--window)" opacity=".18"/><rect x="${x(s0)}" y="${T}" width="${(i1-s0)*bw}" height="${ih}" fill="none" stroke="var(--window)" stroke-width="2"/>`;
+  }
+  d.forEach((h,i)=>{const v=ct(h.p),below=v<thr,col=i===mi?'var(--cheap)':i===ma?'var(--peak)':below?'var(--cheap)':'var(--bar)';
+    const top=Math.min(y(v),y(0)),hh=Math.abs(y(v)-y(0));
+    s+=`<rect x="${x(i)+bw*.12}" y="${top}" width="${bw*.76}" height="${Math.max(hh,1)}" fill="${col}"${below&&i!==mi?' opacity=".8"':''} rx="1"><title>${h.hm} Uhr: ${fmt(v)} ct/kWh</title></rect>`;
+    if(below)s+=`<rect x="${x(i)+bw*.12}" y="${T+ih+4}" width="${bw*.76}" height="4" fill="var(--cheap)"/>`});
+  s+=`<line x1="${L}" x2="${W-R}" y1="${y(thr)}" y2="${y(thr)}" stroke="var(--cheap)" stroke-width="1.5" stroke-dasharray="6 4"/>`;
+  s+=`<text x="${W-R-4}" y="${y(thr)-5}" text-anchor="end" font-size="11" font-weight="500" fill="var(--cheap)">Schwelle ${fmt(thr,1)}</text>`;
+  const lab=(i,txt,c)=>{const cx=Math.min(Math.max(x(i)+bw/2,L+55),W-R-55);return `<text x="${cx}" y="${Math.max(y(ct(d[i].p))-8,T-6)}" text-anchor="middle" font-size="12" font-weight="700" fill="${c}">${txt}</text>`};
+  s+=lab(ma,`max ${fmt(ct(st.max.p))} · ${st.max.hm}`,'var(--peak)')+lab(mi,`min ${fmt(ct(st.min.p))} · ${st.min.hm}`,'var(--cheap)');
+  d.forEach((h,i)=>{if(i%3===0||d.length<=12)s+=`<text x="${x(i)+bw/2}" y="${H-10}" text-anchor="middle" font-size="12" fill="var(--muted)">${h.hm.slice(0,2)}</text>`});
+  s+=`<text x="${W-R}" y="${H-10}" text-anchor="end" font-size="11" fill="var(--muted)">Uhr</text>`;
+  if(S.wx!=='off'){
+    const key=S.wx==='temp'?'temp':'sun',w=d.map(h=>WX.get(h.key)?.[key]);
+    const ok=w.filter(v=>v!=null),wl=S.wx==='temp'?Math.floor(Math.min(...ok))-1:0,wh=S.wx==='temp'?Math.ceil(Math.max(...ok))+1:60,wy=v=>T+ih-(v-wl)/(wh-wl)*ih;
+    const pts=w.map((v,i)=>v==null?null:`${x(i)+bw/2},${wy(v)}`).filter(Boolean);
+    s+=`<polyline points="${pts.join(' ')}" fill="none" stroke="var(--weather)" stroke-width="2.5" stroke-linejoin="round"/>`;
+    for(let k=0;k<=2;k++){const v=wl+(wh-wl)*k/2;s+=`<text x="${W-R+8}" y="${wy(v)+4}" font-size="12" fill="var(--weather)">${Math.round(v)}</text>`}
+    s+=`<text x="${W-R+8}" y="16" font-size="11" fill="var(--weather)">${S.wx==='temp'?'°C':'min'}</text>`;
+  }
+  svg.innerHTML=s;
+  $('legend').innerHTML=`<span><b style="background:var(--bar)"></b>Stundenpreis</span><span><b style="background:var(--cheap)"></b>unter Schwelle / Minimum</span><span><b style="background:var(--peak)"></b>Maximum</span>`+
+   (S.win&&!S.win.error?`<span><b style="background:var(--window);opacity:.5"></b>günstigstes Fenster</span>`:'')+
+   (S.wx!=='off'?`<span><b style="background:var(--weather)"></b>${S.wx==='temp'?'Temperatur':'Sonnenschein'}</span>`:'');
+  $('chartNote').textContent=`${d.length} Stundenwerte${d.length!==24?' (Zeitumstellung)':''}, Mittelwert aus je 4 Viertelstunden.`;
+}
+
+/* ---------- Stats ---------- */
+function renderStats(){
+  const d=byDay(S.day);if(!d.length){$('stats').innerHTML='<p>Keine Daten für diesen Tag.</p>';return}
+  const s=stats(d),prev=byDay(addDays(S.day,-1)),below=d.filter(h=>ct(h.p)<S.thr).length;
+  let cmp='<dd>–</dd>';
+  if(prev.length){const pa=stats(prev).avg,diff=ct(s.avg-pa),pct=(s.avg-pa)/pa*100;
+    cmp=`<dd class="${diff>0?'up':'down'}">${diff>0?'+':''}${fmt(diff)} <small>ct/kWh · ${pct>0?'+':''}${fmt(pct,1)} %</small></dd>`}
+  const item=(k,v)=>`<div><dt>${k}</dt>${v}</div>`;
+  $('stats').innerHTML=item('Durchschnitt',`<dd>${fmt(ct(s.avg))} <small>ct/kWh</small></dd>`)+
+   item('Standardabweichung',`<dd>${fmt(ct(s.sd))} <small>ct/kWh</small></dd>`)+
+   item('Minimum',`<dd class="down">${fmt(ct(s.min.p))} <small>ct/kWh · ${s.min.hm} Uhr</small></dd>`)+
+   item('Maximum',`<dd class="up">${fmt(ct(s.max.p))} <small>ct/kWh · ${s.max.hm} Uhr</small></dd>`)+
+   item(`Stunden unter ${fmt(S.thr,1)} ct`,`<dd>${below} <small>von ${s.n}</small></dd>`)+
+   item('Vergleich zum Vortag',cmp);
+}
+
+/* ---------- Window calculator ---------- */
+function calc(){
+  const P=parseFloat($('P').value),T=parseInt($('T').value,10);
+  const f=$('from').value.slice(0,13),t=$('to').value.slice(0,13);
+  const h=hours.filter(x=>(!f||x.key>=f)&&(!t||x.key<=t));
+  S.win=h.length?bestWindow(h,P,T):{error:'Im gewählten Zeitraum liegen keine Preise vor.'};
+  const w=S.win,o=$('out');
+  if(w.error){o.innerHTML=`<div class="err" role="alert">${w.error}</div>`;renderChart();return}
+  const e=t=>`${new Date(t*1000).toLocaleDateString('de-CH',{weekday:'short',day:'numeric',month:'numeric',timeZone:TZ})}, ${hhmm(t)}`;
+  const diff=w.costSingles<w.cost-1e-9?`Die ${w.T} günstigsten Einzelstunden kosten ${fmt(w.costSingles,3)} EUR, also ${fmt(w.cost-w.costSingles,3)} EUR weniger als der zusammenhängende Block.`:'Der zusammenhängende Block ist zugleich die günstigste Wahl.';
+  o.innerHTML=`<div class="result"><div class="label" style="color:inherit;opacity:.85">Bestes Fenster</div>
+    <div class="big">${e(w.start)} – ${hhmm(w.end)} Uhr</div>
+    <div class="grid"><div>Kosten<b>${fmt(w.cost,3)} EUR</b></div><div>Bei Durchschnittspreis<b>${fmt(w.costAvg,3)} EUR</b></div><div>Ersparnis<b>${fmt(w.saving,3)} EUR</b></div></div>
+    <p>${diff}</p></div>`;
+  const k=dayKey(w.start);
+  if(k!==S.day&&days.includes(k))setDay(k);else renderChart();
+}
+
+/* ---------- Wiring ---------- */
+function setDay(k){
+  S.day=k;
+  document.querySelectorAll('#dayseg button').forEach(b=>b.setAttribute('aria-pressed',String((b.dataset.d==='today'&&k===TODAY)||(b.dataset.d==='tomorrow'&&k===TOMORROW))));
+  $('date').value=k;renderChart();renderStats();
+}
+$('dayseg').addEventListener('click',e=>{const b=e.target.closest('button');if(b)setDay(b.dataset.d==='today'?TODAY:TOMORROW)});
+$('date').min=days[0];$('date').max=days[days.length-1];
+$('date').addEventListener('change',e=>{if(days.includes(e.target.value))setDay(e.target.value)});
+$('thr').addEventListener('input',e=>{S.thr=+e.target.value;$('thrOut').textContent=fmt(S.thr,1)+' ct';renderChart();renderStats()});
+$('wx').addEventListener('change',e=>{S.wx=e.target.value;renderChart()});
+$('sim').addEventListener('change',e=>{S.sim=e.target.checked;renderStatus()});
+$('calc').addEventListener('submit',e=>{e.preventDefault();calc()});
+$('from').min=$('to').min=hours[0].key+':00';$('from').max=$('to').max=hours[hours.length-1].key+':00';
+$('from').value=TODAY+'T00:00';$('to').value=TOMORROW+'T23:00';
+{const st=stats(byDay(TODAY));S.thr=Math.round(ct(st.avg)*0.8*10)/10;$('thr').max=Math.ceil(ct(st.max.p)+4);$('thr').value=S.thr;$('thrOut').textContent=fmt(S.thr,1)+' ct'}
+renderStatus();setDay(TODAY);calc();
+</script>
+
+</body>
+</html>
